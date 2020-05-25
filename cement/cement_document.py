@@ -307,6 +307,7 @@ class CementDocument(object):
                                confidence: Optional[float] = None) -> UUID:
         mention_arguments: List[MentionArgument] = []
         for arg in arguments:
+            # TODO(@Yunmo): this assumption might not always hold...
             if isinstance(arg, CementSpan) and not isinstance(arg, CementEntityMention):
                 ref_sm = self._indices_to_situation_mention.get((arg.start, arg.end))
                 em_uuid = None
@@ -327,6 +328,9 @@ class CementDocument(object):
             else:
                 logger.warning(f'Skipped {arg} as {type(arg)} is not implemented.')
                 continue
+
+            # if 'role' not in arg.attrs:
+            #     logger.warning(f'Assigning None role - {arg} - {arg.attrs.role}')
 
             mention_arguments.append(MentionArgument(
                 role=arg.attrs.role if 'role' in arg.attrs else None,
@@ -364,8 +368,8 @@ class CementDocument(object):
                                            confidence=confidence)
 
     def add_event_mention(self,
-                          trigger: CementSpan,
                           arguments: List[Union[CementSpan, CementEntityMention]],
+                          trigger: Optional[CementSpan] = None,
                           event_type: Optional[str] = None,
                           intensity: Optional[float] = None,
                           polarity: Optional[float] = None,
