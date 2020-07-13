@@ -216,6 +216,9 @@ class CementDocument(object):
     def get_sent_id_by_tokenization_id(self, tokenization_id: UUID) -> int:
         return self._tokenization_ids[tokenization_id.uuidString]
 
+    def get_sentence_start(self, sent_id: int) -> int:
+        return self._tokenization_offsets[sent_id - 1] if sent_id > 0 else 0
+
     def get_sentence_length(self, sent_id: int) -> int:
         assert sent_id < len(self._tokenization_offsets), f'sent_id={sent_id} exceeds'
         return self._tokenization_offsets[sent_id] - (self._tokenization_offsets[sent_id - 1] if sent_id > 0 else 0)
