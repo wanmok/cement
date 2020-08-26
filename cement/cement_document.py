@@ -223,6 +223,9 @@ class CementDocument(object):
         assert sent_id < len(self._tokenization_offsets), f'sent_id={sent_id} exceeds'
         return self._tokenization_offsets[sent_id] - (self._tokenization_offsets[sent_id - 1] if sent_id > 0 else 0)
 
+    def get_num_sentences(self) -> int:
+        return len(self._tokenizations)
+
     def get_sentence(self, sent_id: int) -> List[str]:
         end_offset: int = self._tokenization_offsets[sent_id]
         start_offset: int = 0 if sent_id <= 0 else self._tokenization_offsets[sent_id - 1]
