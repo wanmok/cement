@@ -1,5 +1,5 @@
 import datetime
-from typing import *
+from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Union
 import logging
 
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \

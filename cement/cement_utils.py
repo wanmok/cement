@@ -1,12 +1,11 @@
 import datetime
-from typing import *
+from typing import Dict, List, Tuple, Union
 
 from concrete import Tokenization, Sentence, AnnotationMetadata, Token, Section, Communication, EntityMention, \
-    TokenList, TokenizationKind, TokenRefSequence
+    TokenList, TokenizationKind
 import numpy as np
 
 from cement.cement_common import augf, TOOL_NAME
-from cement.cement_span import CementSpan
 
 
 def resolve_span_indices_to_entity_mention_mapping(

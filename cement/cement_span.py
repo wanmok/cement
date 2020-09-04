@@ -1,4 +1,4 @@
-from typing import *
+from typing import List, NoReturn, Optional, Tuple, Union
 import logging
 
 from concrete import TokenRefSequence
