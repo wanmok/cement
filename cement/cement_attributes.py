@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Dict
 
 
 class CementAttributes(object):

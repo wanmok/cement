@@ -1,5 +1,5 @@
 import logging
-from typing import *
+from typing import Optional
 
 from concrete import EntityMention
 
