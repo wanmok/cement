@@ -5,7 +5,7 @@ import logging
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \
     SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind
 from concrete.util import read_communication_from_file, \
-    add_references_to_communication, write_communication_to_file
+    add_references_to_communication, write_communication_to_file, read_thrift_from_file
 from concrete.validate import validate_communication
 
 from cement.cement_common import augf, TOOL_NAME
@@ -26,7 +26,11 @@ class CementDocument(object):
 
         # analyze the given `Communication`
         # perform `references()` to ensure it has all the references added
-        add_references_to_communication(self.comm)
+        try:
+            add_references_to_communication(self.comm)
+        except KeyError:
+            from cement.utils import add_references_to_communication as safe_ref
+            safe_ref(self.comm)
         # ensure that `keyValueMap` is already in the comm, otherwise, add it to comm
         if self.comm.keyValueMap is None:
             self.comm.keyValueMap = {}
@@ -217,11 +221,12 @@ class CementDocument(object):
         return self._tokenization_ids[tokenization_id.uuidString]
 
     def get_sentence_start(self, sent_id: int) -> int:
-        return self._tokenization_offsets[sent_id - 1] if sent_id > 0 else 0
+        return self._tokenization_offsets[sent_id - 1].item() if sent_id > 0 else 0
 
     def get_sentence_length(self, sent_id: int) -> int:
         assert sent_id < len(self._tokenization_offsets), f'sent_id={sent_id} exceeds'
-        return self._tokenization_offsets[sent_id] - (self._tokenization_offsets[sent_id - 1] if sent_id > 0 else 0)
+        return self._tokenization_offsets[sent_id].item() - (
+            self._tokenization_offsets[sent_id - 1].item() if sent_id > 0 else 0)
 
     def get_num_sentences(self) -> int:
         return len(self._tokenizations)
@@ -486,7 +491,14 @@ class CementDocument(object):
 
     @classmethod
     def from_communication_file(cls, file_path: str, annotation_set: str = TOOL_NAME) -> 'CementDocument':
-        comm = read_communication_from_file(file_path)
+        try:
+            comm = read_communication_from_file(file_path)
+        except KeyError:
+            from cement.utils import add_references_to_communication as safe_ref
+            from concrete.util import read_thrift_from_file
+            comm = read_thrift_from_file(Communication(), file_path)
+            safe_ref(comm)
+
         return cls.from_communication(comm=comm, annotation_set=annotation_set)
 
     @classmethod
