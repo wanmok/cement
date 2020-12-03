@@ -3,7 +3,7 @@ from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Un
 import logging
 
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \
-    SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind
+    SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind, Entity
 from concrete.util import read_communication_from_file, \
     add_references_to_communication, write_communication_to_file, read_thrift_from_file
 from concrete.validate import validate_communication
@@ -254,6 +254,23 @@ class CementDocument(object):
 
     def get_entity_mention_by_indices(self, start: int, end: int) -> Optional[EntityMention]:
         return self._indices_to_entity_mention.get((start, end))
+
+    def add_entity_singleton(self,
+                             mention: Union[EntityMention, CementEntityMention],
+                             entity_type: str,
+                             confidence: float = 1.,
+                             update: bool = True) -> UUID:
+        # TODO(@Yunmo): this assumption might not always hold, please visit later
+        entity_mention_uuid = self.add_entity_mention(mention=mention, update=update)
+        entity = Entity(uuid=augf.next(),
+                        id=None,
+                        mentionIdList=[entity_mention_uuid],
+                        rawMentionList=None,
+                        type=entity_type,
+                        confidence=confidence,
+                        canonicalName=None)
+        self._entity_set.entityList.append(entity)
+        return entity.uuid
 
     def add_entity_mention(self,
                            mention: Union[EntityMention, CementEntityMention],
