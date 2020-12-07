@@ -16,7 +16,7 @@ class CementEntityMention(CementSpan):
                  entity_type: Optional[str] = None,
                  phrase_type: Optional[str] = None,
                  confidence: Optional[float] = None,
-                 text: Optional[float] = None,
+                 text: Optional[str] = None,
                  document: Optional['CementDocument'] = None,
                  head: Optional[int] = None,
                  **kwargs):
@@ -73,7 +73,7 @@ class CementEntityMention(CementSpan):
                              entityType=self.attrs.entity_type,
                              phraseType=self.attrs.phrase_type,
                              confidence=self.attrs.confidence,
-                             text=self.attrs.text)
+                             text=self.attrs.text if self.attrs.text is not None else self.to_text())
 
     @classmethod
     def from_entity_mention(cls, mention: EntityMention, document: 'CementDocument') -> 'CementEntityMention':

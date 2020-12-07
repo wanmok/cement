@@ -51,6 +51,21 @@ class CementSpan(object):
 
     def to_text(self) -> str:
         assert self.document, 'This span is not associated with any document.'
+        if self.document.comm.text is not None:
+            local_indices = self.to_local_indices()
+            start_sent_id, start_token_id = local_indices[0]
+            end_sent_id, end_token_id = local_indices[-1]
+            start_tokenization = self.document.comm.tokenizationForUUID[
+                self.document.get_tokenization_id_by_sent_id(start_sent_id).uuidString
+            ]
+            end_tokenization = self.document.comm.tokenizationForUUID[
+                self.document.get_tokenization_id_by_sent_id(end_sent_id).uuidString
+            ]
+            start_token = start_tokenization.tokenList.tokenList[start_token_id]
+            end_token = end_tokenization.tokenList.tokenList[end_token_id]
+            if start_token.textSpan is not None and end_token.textSpan is not None:
+                return self.document.comm.text[start_token.textSpan.start:end_token.textSpan.ending]
+
         return ' '.join(self.document[self.start:self.end + 1])
 
     def to_token_ref_sequence(self) -> TokenRefSequence:
