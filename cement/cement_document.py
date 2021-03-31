@@ -3,7 +3,8 @@ from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Un
 import logging
 
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \
-    SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind, Entity
+    SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind, Entity, Argument, \
+    Justification, TimeML, Situation
 from concrete.util import read_communication_from_file, \
     add_references_to_communication, write_communication_to_file, read_thrift_from_file
 from concrete.validate import validate_communication
@@ -258,13 +259,35 @@ class CementDocument(object):
     def add_entity_singleton(self,
                              mention: Union[EntityMention, CementEntityMention],
                              entity_type: str,
+                             entity_id: Optional[str] = None,
                              confidence: float = 1.,
                              update: bool = True) -> UUID:
         # TODO(@Yunmo): this assumption might not always hold, please visit later
         entity_mention_uuid = self.add_entity_mention(mention=mention, update=update)
         entity = Entity(uuid=augf.next(),
-                        id=None,
+                        id=entity_id,
                         mentionIdList=[entity_mention_uuid],
+                        rawMentionList=None,
+                        type=entity_type,
+                        confidence=confidence,
+                        canonicalName=None)
+        self._entity_set.entityList.append(entity)
+        return entity.uuid
+
+    def add_entity(self,
+                   mentions: List[Union[EntityMention, CementEntityMention]],
+                   entity_type: str,
+                   entity_id: Optional[str] = None,
+                   confidence: float = 1.,
+                   update: bool = True) -> UUID:
+        added_mention_uuids = []
+        for mention in mentions:
+            added_mention_uuid = self.add_entity_mention(mention=mention, update=update)
+            added_mention_uuids.append(added_mention_uuid)
+
+        entity = Entity(uuid=augf.next(),
+                        id=entity_id,
+                        mentionIdList=added_mention_uuids,
                         rawMentionList=None,
                         type=entity_type,
                         confidence=confidence,
@@ -312,6 +335,29 @@ class CementDocument(object):
             self.comm.entityMentionForUUID[entity_mention.uuid.uuidString] = entity_mention
 
             return entity_mention.uuid
+
+    def add_raw_situation(self,
+                          situation_type: str,
+                          situation_kind: Optional[str] = None,
+                          arguments: Optional[List[Argument]] = None,
+                          mention_ids: Optional[List[UUID]] = None,
+                          justifications: Optional[List[Justification]] = None,
+                          time_ml: Optional[TimeML] = None,
+                          intensity: Optional[float] = None,
+                          polarity: Optional[str] = None,
+                          confidence: float = 1.) -> UUID:
+        situation = Situation(uuid=augf.next(),
+                              situationType=situation_type,
+                              situationKind=situation_kind,
+                              argumentList=arguments,
+                              mentionIdList=mention_ids,
+                              justificationList=justifications,
+                              timeML=time_ml,
+                              intensity=intensity,
+                              polarity=polarity,
+                              confidence=confidence)
+        self._situation_set.situationList.append(situation)
+        return situation.uuid
 
     def add_situation_mention(self, mention: SituationMention, trigger: Optional[CementSpan] = None) -> UUID:
         # TODO(@Yunmo): verify this assumption?
@@ -521,17 +567,3 @@ class CementDocument(object):
     @classmethod
     def from_communication(cls, comm: Communication, annotation_set: str = TOOL_NAME) -> 'CementDocument':
         return cls(comm=comm, annotation_set=annotation_set)
-
-
-if __name__ == '__main__':
-    # from transformers import BasicTokenizer
-    # tokenizer = BasicTokenizer()
-    import json
-    import numpy as np
-
-    with open('out/downloadRAMS/Baseline.baseline/out/RAMS_1.0/data/train.jsonlines') as f:
-        json_doc = json.loads(next(f))
-    doc = CementDocument.from_tokens(tokens={'paragraph': json_doc['sentences']})
-    indices = global_to_local_indices(np.array([19, 20, 23, 24]), doc._tokenization_offsets)
-    doc[:]
-    pass
