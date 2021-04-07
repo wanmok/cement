@@ -463,6 +463,18 @@ class CementDocument(object):
         for i, offset in enumerate(self._tokenization_offsets):
             yield self[(0 if i == 0 else self._tokenization_offsets[i - 1]):offset]
 
+    def iterate_entities(self, key: Callable = lambda x: True) -> Iterable[Entity]:
+        return filter(key, self._entity_set.entityList)
+
+    def iterate_situations(self, key: Callable = lambda x: True) -> Iterable[Situation]:
+        return filter(key, self._situation_set.situationList)
+
+    def iterate_events(self) -> Iterable[Situation]:
+        return self.iterate_situations(key=lambda x: x.situationType == 'EVENT')
+
+    def iterate_relations(self) -> Iterable[Situation]:
+        return self.iterate_situations(key=lambda x: x.situationType == 'RELATION')
+
     def iterate_situation_mentions(self, key: Callable = lambda x: True) -> Iterable[SituationMention]:
         return filter(key, self._situation_mention_set.mentionList)
 
