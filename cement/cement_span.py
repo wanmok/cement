@@ -20,6 +20,12 @@ class CementSpan(object):
         self.attrs = CementAttributes(**kwargs)
         self.document: Optional['CementDocument'] = document
 
+    def __copy__(self):
+        return CementSpan(start=self.start,
+                          end=self.end,
+                          document=self.document,
+                          **self.attrs.to_dict())
+
     def read_span_kv(self, suffix: str, key: Optional[str] = None, key_prefix: str = 'span') -> Optional[str]:
         assert self.document, 'This entity mention is not associated with any document.'
         return self.document.read_kv_map(prefix=key_prefix,

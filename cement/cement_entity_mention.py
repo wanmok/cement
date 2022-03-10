@@ -30,6 +30,11 @@ class CementEntityMention(CementSpan):
                          head=head,
                          **kwargs)
 
+    def __copy__(self):
+        return CementEntityMention(start=self.start,
+                                   end=self.end,
+                                   **self.attrs.to_dict())
+
     def __repr__(self):
         basic_info: str = f'{self.start}, {self.end}' + (f', {self.attrs.head}' if self.attrs.head else '')
         if self.document:
