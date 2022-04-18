@@ -279,6 +279,7 @@ class CementDocument(object):
                    entity_type: str,
                    entity_id: Optional[str] = None,
                    confidence: float = 1.,
+                   canonical_name: Optional[str] = None,
                    update: bool = True) -> UUID:
         added_mention_uuids = []
         for mention in mentions:
@@ -291,7 +292,7 @@ class CementDocument(object):
                         rawMentionList=None,
                         type=entity_type,
                         confidence=confidence,
-                        canonicalName=None)
+                        canonicalName=canonical_name)
         self._entity_set.entityList.append(entity)
         return entity.uuid
 
