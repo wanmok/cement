@@ -272,6 +272,7 @@ class CementDocument(object):
                         confidence=confidence,
                         canonicalName=None)
         self._entity_set.entityList.append(entity)
+        self.comm.entityForUUID[entity.uuid.uuidString] = entity
         return entity.uuid
 
     def add_entity(self,
@@ -293,7 +294,9 @@ class CementDocument(object):
                         type=entity_type,
                         confidence=confidence,
                         canonicalName=canonical_name)
+
         self._entity_set.entityList.append(entity)
+        self.comm.entityForUUID[entity.uuid.uuidString] = entity
         return entity.uuid
 
     def add_entity_mention(self,
