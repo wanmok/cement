@@ -4,7 +4,7 @@ import logging
 
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \
     SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind, Entity, Argument, \
-    Justification, TimeML, Situation
+    Justification, TimeML, Situation, Section, Sentence, Tokenization
 from concrete.util import read_communication_from_file, \
     add_references_to_communication, write_communication_to_file, read_thrift_from_file
 from concrete.validate import validate_communication
@@ -340,10 +340,42 @@ class CementDocument(object):
 
             return entity_mention.uuid
 
+    def resolve_uuid_type(self, uuid: Union[UUID, str]) -> Optional[str]:
+        returned = self.get_obj_by_uuid(uuid=uuid)
+        if returned is None:
+            return None
+        return returned[0]
+
+    def get_obj_by_uuid(self, uuid: Union[UUID, str]) -> Optional[Tuple[
+        str,
+        Union[Entity, EntityMention, Situation, SituationMention, Section, Sentence, Tokenization]
+    ]]:
+        if isinstance(uuid, UUID):
+            uuid_str = uuid.uuidString
+        else:
+            uuid_str = uuid
+
+        if uuid_str in self.comm.entityForUUID:
+            return 'entity', self.comm.entityForUUID[uuid_str]
+        elif uuid_str in self.comm.entityMentionForUUID:
+            return 'entity_mention', self.comm.entityMentionForUUID[uuid_str]
+        elif uuid_str in self.comm.situationMentionForUUID:
+            return 'situation_mention', self.comm.situationMentionForUUID[uuid_str]
+        elif uuid_str in self.comm.situationForUUID:
+            return 'situation', self.comm.situationForUUID[uuid_str]
+        elif uuid_str in self.comm.sectionForUUID:
+            return 'section', self.comm.sectionForUUID[uuid_str]
+        elif uuid_str in self.comm.sentenceForUUID:
+            return 'sentence', self.comm.sentenceForUUID[uuid_str]
+        elif uuid_str in self.comm.tokenizationForUUID:
+            return 'tokenization', self.comm.tokenizationForUUID[uuid_str]
+        else:
+            return None
+
     def add_raw_situation(self,
                           situation_type: str,
                           situation_kind: Optional[str] = None,
-                          arguments: Optional[List[Argument]] = None,
+                          arguments: Optional[List[Union[Argument, UUID]]] = None,
                           mention_ids: Optional[List[UUID]] = None,
                           justifications: Optional[List[Justification]] = None,
                           time_ml: Optional[TimeML] = None,
@@ -360,7 +392,10 @@ class CementDocument(object):
                               intensity=intensity,
                               polarity=polarity,
                               confidence=confidence)
+
         self._situation_set.situationList.append(situation)
+        self.comm.situationForUUID[situation.uuid.uuidString] = situation
+
         return situation.uuid
 
     def add_situation_mention(self, mention: SituationMention, trigger: Optional[CementSpan] = None) -> UUID:
