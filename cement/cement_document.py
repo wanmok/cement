@@ -1,12 +1,12 @@
 import datetime
-from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Union
 import logging
+from typing import Callable, Dict, Iterable, List, NoReturn, Optional, Tuple, Union
 
 from concrete import Communication, AnnotationMetadata, EntityMention, UUID, EntityMentionSet, EntitySet, \
     SituationMentionSet, SituationSet, SituationMention, MentionArgument, TokenizationKind, Entity, Argument, \
     Justification, TimeML, Situation, Section, Sentence, Tokenization
 from concrete.util import read_communication_from_file, \
-    add_references_to_communication, write_communication_to_file, read_thrift_from_file
+    add_references_to_communication, write_communication_to_file
 from concrete.validate import validate_communication
 
 from cement.cement_common import augf, TOOL_NAME
@@ -236,6 +236,12 @@ class CementDocument(object):
         end_offset: int = self._tokenization_offsets[sent_id]
         start_offset: int = 0 if sent_id <= 0 else self._tokenization_offsets[sent_id - 1]
         return self[start_offset:end_offset]
+
+    def get_sentence_range(self, sent_id: int) -> Tuple[int, int]:
+        # Left inclusive, right exclusive
+        sent_start = self.get_sentence_start(sent_id)
+        sent_length = self.get_sentence_length(sent_id)
+        return sent_start, sent_start + sent_length
 
     def get_entity_mentions_by_indices(self,
                                        span_indices: List[Union[CementSpan, Tuple[int, int]]]
@@ -497,6 +503,10 @@ class CementDocument(object):
 
     def num_sentences(self) -> int:
         return len(self._tokenization_offsets)
+
+    def iterate_sentence_ranges(self) -> Iterable[Tuple[int, int]]:
+        for sent_id in range(self.get_num_sentences()):
+            yield self.get_sentence_range(sent_id)
 
     def iterate_sentences(self) -> Iterable[List[str]]:
         for i, offset in enumerate(self._tokenization_offsets):
