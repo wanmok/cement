@@ -13,7 +13,7 @@ from cement.cement_common import augf, TOOL_NAME
 from cement.cement_entity_mention import CementEntityMention
 from cement.cement_span import CementSpan
 from cement.cement_utils import create_section_from_tokens, resolve_token_indices, global_to_local_indices, \
-    local_to_global_indices, resolve_span_indices_to_entity_mention_mapping
+    local_to_global_indices, resolve_span_indices_to_entity_mention_mapping, InputSection
 
 logger = logging.getLogger(__name__)
 
@@ -598,7 +598,7 @@ class CementDocument(object):
 
     @classmethod
     def from_tokens(cls,
-                    tokens: Dict[str, List[List[str]]],
+                    tokens: Dict[str, InputSection],
                     token_kind: TokenizationKind = TokenizationKind.TOKEN_LIST,
                     doc_type: str = 'newswire',
                     doc_id: Optional[str] = None,
