@@ -388,6 +388,17 @@ class CementDocument(object):
                           intensity: Optional[float] = None,
                           polarity: Optional[str] = None,
                           confidence: float = 1.) -> UUID:
+        for i in range(len(arguments)):
+            if isinstance(arguments[i], UUID):
+                uuid = arguments[i]
+                uuid_type = self.resolve_uuid_type(uuid)
+                if uuid_type == 'entity':
+                    arguments[i] = Argument(entityId=uuid)
+                elif uuid_type == 'situation':
+                    arguments[i] = Argument(situationId=uuid)
+                else:
+                    raise ValueError(f'UUID {uuid} for argument is not an entity or situation UUID')
+
         situation = Situation(uuid=augf.next(),
                               situationType=situation_type,
                               situationKind=situation_kind,
