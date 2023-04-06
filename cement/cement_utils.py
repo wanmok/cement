@@ -1,11 +1,48 @@
 import datetime
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 from concrete import Tokenization, Sentence, AnnotationMetadata, Token, Section, Communication, EntityMention, \
-    TokenList, TokenizationKind
+    TokenList, TokenizationKind, TextSpan
 import numpy as np
 
 from cement.cement_common import augf, TOOL_NAME
+
+
+class InputTokenWithSpan(NamedTuple):
+    text: str
+    start: int
+    end: int
+
+
+InputTokenWithoutSpan = str
+InputToken = Union[InputTokenWithoutSpan, InputTokenWithSpan]
+
+
+class InputSentenceWithSpan(NamedTuple):
+    tokens: List[InputToken]
+    start: int
+    end: int
+
+
+InputSentenceWithoutSpan = List[InputToken]
+InputSentence = Union[InputSentenceWithoutSpan, InputSentenceWithSpan]
+
+
+class InputSectionWithSpan(NamedTuple):
+    sentences: List[InputSentence]
+    start: int
+    end: int
+
+
+InputSectionWithoutSpan = List[InputSentence]
+InputSection = Union[InputSectionWithoutSpan, InputSectionWithSpan]
+
+
+def create_input_struct_text_span(input_struct: Union[InputToken, InputSentence, InputSection]) -> Optional[TextSpan]:
+    if isinstance(input_struct, (InputTokenWithSpan, InputSentenceWithSpan, InputSectionWithSpan)):
+        return TextSpan(start=input_struct.start, ending=input_struct.end)
+    else:
+        return None
 
 
 def resolve_span_indices_to_entity_mention_mapping(
@@ -47,7 +84,7 @@ def resolve_span_indices_to_entity_mention_mapping(
     return mappings
 
 
-def create_sentence_from_tokens(tokens: List[str],
+def create_sentence_from_tokens(tokens: InputSentence,
                                 kind: TokenizationKind = TokenizationKind.TOKEN_LIST) -> Sentence:
     tokenization = Tokenization(
         uuid=augf.next(),
@@ -56,23 +93,26 @@ def create_sentence_from_tokens(tokens: List[str],
                                     timestamp=int(datetime.datetime.now().timestamp())),
         tokenList=TokenList(tokenList=[
             Token(tokenIndex=i,
-                  text=t)
-            for i, t in enumerate(tokens)
+                  text=t.text if isinstance(t, InputTokenWithSpan) else t,
+                  textSpan=create_input_struct_text_span(t))
+            for i, t in enumerate(tokens.tokens if isinstance(tokens, InputSentenceWithSpan) else tokens)
         ])
     )
-    return Sentence(uuid=augf.next(), tokenization=tokenization)
+    return Sentence(uuid=augf.next(), tokenization=tokenization,
+                    textSpan=create_input_struct_text_span(tokens))
 
 
-def create_section_from_tokens(tokens: List[List[str]],
+def create_section_from_tokens(tokens: InputSection,
                                section_type: str = 'passage',
                                token_kind: TokenizationKind = TokenizationKind.TOKEN_LIST) -> Section:
     sentences: List[Sentence] = [
         create_sentence_from_tokens(tokens=sent, kind=token_kind)
-        for sent in tokens
+        for sent in (tokens.sentences if isinstance(tokens, InputSectionWithSpan) else tokens)
     ]
     return Section(uuid=augf.next(),
                    kind=section_type,
-                   sentenceList=sentences)
+                   sentenceList=sentences,
+                   textSpan=create_input_struct_text_span(tokens))
 
 
 def resolve_token_indices(comm: Communication) -> Tuple[List[Tokenization], np.ndarray, Dict[str, int]]:
@@ -108,7 +148,7 @@ def local_to_global_indices(sent_ids: Union[List, np.ndarray],
     if isinstance(sent_ids, list):
         sent_ids = np.array(sent_ids)
     if len(sent_ids) == 0:
-        return np.array([], dtype=np.int)
+        return np.array([], dtype=int)
     bin_ids = sent_ids - 1
     offsets = np.where(bin_ids == -1, 0, bins[bin_ids])
     return offsets + indices
